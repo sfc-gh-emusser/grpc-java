@@ -272,18 +272,15 @@ public class RouteGuideClient {
   };
 
      
-  public CountDownLatch execute() {
+  public CountDownLatch execute(int clientNum) {
     info("*** Execute");
     final CountDownLatch finishLatch = new CountDownLatch(1);
     StreamObserver<ExecuteRequest> requestObserver =
       asyncStub.execute(new ExecuteStreamObserver(finishLatch));
 
     try {
-      ExecuteRequest[] requests =
-          {newRequest("First message", 0), newRequest("Second message", 1),
-           newRequest("Third message", 2), newRequest("Fourth message", 3)};
-
-      for (ExecuteRequest request : requests) {
+      for (int req = 0; req < 100; req += 1) {
+        ExecuteRequest request = newRequest("hello", clientNum, req);
         info("Sending message \"{0}\"", request.getMessage());
         requestObserver.onNext(request);
       }
@@ -349,7 +346,7 @@ public class RouteGuideClient {
       for (int i = 0; i < 16; i += 1) {
         RouteGuideClient client = new RouteGuideClient(channel);
 
-        CountDownLatch finishLatch = client.execute();
+        CountDownLatch finishLatch = client.execute(i);
         latches.add(finishLatch);
       }
 
@@ -378,8 +375,8 @@ public class RouteGuideClient {
         .setLocation(Point.newBuilder().setLatitude(lat).setLongitude(lon).build()).build();
   }
 
-  private ExecuteRequest newRequest(String message, int num) {
-    return ExecuteRequest.newBuilder().setMessage(message).setRequestNum(num).build();
+  private ExecuteRequest newRequest(String message, int clientNum, int requestNum) {
+    return ExecuteRequest.newBuilder().setMessage(message).setRequestNum(requestNum).setClientNum(clientNum).build();
 //        .setLocation(Point.newBuilder().setLatitude(lat).setLongitude(lon).build()).build();
   }
 
