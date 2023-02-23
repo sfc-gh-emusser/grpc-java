@@ -240,6 +240,56 @@ public class RouteGuideClient {
     return finishLatch;
   }
 
+  public CountDownLatch execute() {
+    info("*** Execute");
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+    StreamObserver<ExecuteRequest> requestObserver =
+        asyncStub.execute(new StreamObserver<ExecuteResponse>() {
+          @Override
+          public void onNext(ExecuteResponse note) {
+            info("Got message \"{0}\"", note.getResponse());
+            if (testHelper != null) {
+              testHelper.onMessage(note);
+            }
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            warning("Execute Failed: {0}", Status.fromThrowable(t));
+            if (testHelper != null) {
+              testHelper.onRpcError(t);
+            }
+            finishLatch.countDown();
+          }
+
+          @Override
+          public void onCompleted() {
+            info("Finished RouteChat");
+            finishLatch.countDown();
+          }
+        });
+
+    try {
+      ExecuteRequest[] requests =
+          {newRequest("First message", 0), newRequest("Second message", 1),
+           newRequest("Third message", 2), newRequest("Fourth message", 3)};
+
+      for (ExecuteRequest request : requests) {
+        info("Sending message \"{0}\"", request.getMessage());
+        requestObserver.onNext(request);
+      }
+    } catch (RuntimeException e) {
+      // Cancel RPC
+      requestObserver.onError(e);
+      throw e;
+    }
+    // Mark the end of requests
+    requestObserver.onCompleted();
+
+    // return the latch while receiving happens asynchronously
+    return finishLatch;
+  }
+  
   /** Issues several different requests and then exits. */
   public static void main(String[] args) throws InterruptedException {
     String target = "localhost:8980";
@@ -290,7 +340,7 @@ public class RouteGuideClient {
       for (int i = 0; i < 16; i += 1) {
         RouteGuideClient client = new RouteGuideClient(channel);
 
-        CountDownLatch finishLatch = client.execute(i);
+        CountDownLatch finishLatch = client.execute();
         latches.add(finishLatch);
       }
 
