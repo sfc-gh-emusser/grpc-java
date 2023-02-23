@@ -240,11 +240,13 @@ public class RouteGuideClient {
     return finishLatch;
   }
 
-  public CountDownLatch execute() {
-    info("*** Execute");
-    final CountDownLatch finishLatch = new CountDownLatch(1);
-    StreamObserver<ExecuteRequest> requestObserver =
-        asyncStub.execute(new StreamObserver<ExecuteResponse>() {
+  public class ExecuteStreamObserver implements StreamObserver<ExecuteResponse> {
+    private final CountDownLatch finishLatch;
+    
+    ExecuteStreamObserver(CountDownLatch latch) {
+      this.finishLatch = latch;
+    }
+    
           @Override
           public void onNext(ExecuteResponse note) {
             info("Got message \"{0}\"", note.getResponse());
@@ -267,7 +269,14 @@ public class RouteGuideClient {
             info("Finished RouteChat");
             finishLatch.countDown();
           }
-        });
+  };
+
+     
+  public CountDownLatch execute() {
+    info("*** Execute");
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+    StreamObserver<ExecuteRequest> requestObserver =
+      asyncStub.execute(new ExecuteStreamObserver(finishLatch));
 
     try {
       ExecuteRequest[] requests =
