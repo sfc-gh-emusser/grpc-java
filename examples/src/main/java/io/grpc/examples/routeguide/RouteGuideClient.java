@@ -242,14 +242,16 @@ public class RouteGuideClient {
 
   public class ExecuteStreamObserver implements StreamObserver<ExecuteResponse> {
     private final CountDownLatch finishLatch;
+    private final int clientNum;
     
-    ExecuteStreamObserver(CountDownLatch latch) {
+    ExecuteStreamObserver(CountDownLatch latch, int clientNum) {
       this.finishLatch = latch;
+      this.clientNum = clientNum;
     }
     
           @Override
           public void onNext(ExecuteResponse note) {
-            info("Got message \"{0}\"", note.getResponse());
+            info("Got message \"{0}\" {1} {2} {3}", note.getResponse(), this.clientNum, note.getClientNum(), note.getResponseNum());
             if (testHelper != null) {
               testHelper.onMessage(note);
             }
@@ -266,7 +268,7 @@ public class RouteGuideClient {
 
           @Override
           public void onCompleted() {
-            info("Finished RouteChat");
+            info("Finished Execute");
             finishLatch.countDown();
           }
   };
@@ -276,12 +278,12 @@ public class RouteGuideClient {
     info("*** Execute");
     final CountDownLatch finishLatch = new CountDownLatch(1);
     StreamObserver<ExecuteRequest> requestObserver =
-      asyncStub.execute(new ExecuteStreamObserver(finishLatch));
+      asyncStub.execute(new ExecuteStreamObserver(finishLatch, clientNum));
 
     try {
       for (int req = 0; req < 100; req += 1) {
         ExecuteRequest request = newRequest("hello", clientNum, req);
-        info("Sending message \"{0}\"", request.getMessage());
+        info("Sending message \"{0}\" {1} {2}", request.getMessage(), request.getClientNum(), request.getRequestNum());
         requestObserver.onNext(request);
       }
     } catch (RuntimeException e) {
@@ -343,7 +345,7 @@ public class RouteGuideClient {
 
       List<CountDownLatch> latches = new ArrayList<CountDownLatch>();
 
-      for (int i = 0; i < 16; i += 1) {
+      for (int i = 0; i < 2; i += 1) {
         RouteGuideClient client = new RouteGuideClient(channel);
 
         CountDownLatch finishLatch = client.execute(i);

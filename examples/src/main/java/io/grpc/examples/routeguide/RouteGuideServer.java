@@ -25,6 +25,7 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
+import java.lang.Thread;
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
@@ -254,7 +255,15 @@ public class RouteGuideServer {
         public void onNext(ExecuteRequest request) {
           //List<RouteNote> notes = getOrCreateNotes(note.getLocation());
 
-          responseObserver.onNext(ExecuteResponse.newBuilder().setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());
+          try {
+            Thread.sleep(1000);
+          } catch(Exception e) {
+          }
+
+//          if (request.getRequestNum() == 50 && request.getClientNum() == 5) {
+           
+          responseObserver.onNext(ExecuteResponse.newBuilder().setClientNum(request.getClientNum()).setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());
+          responseObserver.onNext(ExecuteResponse.newBuilder().setClientNum(request.getClientNum()).setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());          
           // Respond with all previous notes at this location.
           //for (RouteNote prevNote : notes.toArray(new RouteNote[0])) {
           //  responseObserver.onNext(prevNote);
