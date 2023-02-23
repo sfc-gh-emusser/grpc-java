@@ -30,6 +30,7 @@ import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -298,6 +299,11 @@ public class RouteGuideClient {
   private RouteNote newNote(String message, int lat, int lon) {
     return RouteNote.newBuilder().setMessage(message)
         .setLocation(Point.newBuilder().setLatitude(lat).setLongitude(lon).build()).build();
+  }
+
+  private ExecuteRequest newRequest(String message, int num) {
+    return ExecuteRequest.newBuilder().setMessage(message).setRequestNum(num).build();
+//        .setLocation(Point.newBuilder().setLatitude(lat).setLongitude(lon).build()).build();
   }
 
   /**
