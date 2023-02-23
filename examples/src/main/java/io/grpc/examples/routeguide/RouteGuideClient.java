@@ -264,7 +264,7 @@ public class RouteGuideClient {
     ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
         .build();
     try {
-      RouteGuideClient client = new RouteGuideClient(channel);
+      /*
       // Looking for a valid feature
       client.getFeature(409146138, -746188906);
 
@@ -282,6 +282,24 @@ public class RouteGuideClient {
 
       if (!finishLatch.await(1, TimeUnit.MINUTES)) {
         client.warning("routeChat can not finish within 1 minutes");
+      }
+      */
+
+      List<CountDownLatch> latches = new ArrayList<CountDownLatch>();
+
+      for (int i = 0; i < 16; i += 1) {
+        RouteGuideClient client = new RouteGuideClient(channel);
+
+        CountDownLatch finishLatch = client.execute(i);
+        latches.add(finishLatch);
+      }
+
+      for (CountDownLatch latch : latches) {
+        if (!latch.await(1, TimeUnit.MINUTES)) {
+          logger.info("warning");
+          
+//          client.warning("routeChat can not finish within 1 minutes");
+        }
       }
     } finally {
       channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
