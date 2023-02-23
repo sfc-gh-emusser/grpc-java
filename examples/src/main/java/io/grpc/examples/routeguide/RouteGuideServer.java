@@ -247,6 +247,35 @@ public class RouteGuideServer {
       };
     }
 
+    @Override
+    public StreamObserver<ExecuteRequest> execute(final StreamObserver<ExecuteResponse> responseObserver) {
+      return new StreamObserver<ExecuteRequest>() {
+        @Override
+        public void onNext(ExecuteRequest request) {
+          //List<RouteNote> notes = getOrCreateNotes(note.getLocation());
+
+          responseObserver.onNext(ExecuteResponse.newBuilder().setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());
+          // Respond with all previous notes at this location.
+          //for (RouteNote prevNote : notes.toArray(new RouteNote[0])) {
+          //  responseObserver.onNext(prevNote);
+          // }
+
+          // Now add the new note to the list
+          //notes.add(note);
+        }
+
+        @Override
+        public void onError(Throwable t) {
+          logger.log(Level.WARNING, "routeChat cancelled");
+        }
+
+        @Override
+        public void onCompleted() {
+          responseObserver.onCompleted();
+        }
+      };
+    }
+    
     /**
      * Get the notes list for the given location. If missing, create it.
      */
