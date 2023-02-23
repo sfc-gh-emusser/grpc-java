@@ -42,6 +42,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * A sample gRPC server that serve the RouteGuide (see route_guide.proto) service.
@@ -249,7 +251,20 @@ public class RouteGuideServer {
     }
 
     private class ExecuteRequestStreamObserver implements StreamObserver<ExecuteRequest> {
+      private class MyTimerTask extends TimerTask {
+        private final ExecuteRequest request;
+        
+        MyTimerTask(final ExecuteRequest request) {
+          this.request = request;
+        }
+        
+        public void run() {
+          responseObserver.onNext(ExecuteResponse.newBuilder().setClientNum(request.getClientNum()).setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());          
+        }
+      }
+      
       private final StreamObserver<ExecuteResponse> responseObserver;
+      private Timer timer = null;
       
       public ExecuteRequestStreamObserver(StreamObserver<ExecuteResponse> responseObserver) {
         this.responseObserver = responseObserver;
@@ -258,15 +273,17 @@ public class RouteGuideServer {
         public void onNext(ExecuteRequest request) {
           //List<RouteNote> notes = getOrCreateNotes(note.getLocation());
 
-          try {
-            Thread.sleep(1000);
-          } catch(Exception e) {
+          if (request.getRequestNum() == 13) {
+//            timer = new Timer();
+            //          timer.schedule(new MyTimerTask(request), (request.getClientNum() * 17 % 997));
           }
+          
+          //responseObserver.onNext(ExecuteResponse.newBuilder().setClientNum(request.getClientNum()).setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());
 
-//          if (request.getRequestNum() == 50 && request.getClientNum() == 5) {
-           
-          responseObserver.onNext(ExecuteResponse.newBuilder().setClientNum(request.getClientNum()).setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());
-          responseObserver.onNext(ExecuteResponse.newBuilder().setClientNum(request.getClientNum()).setResponse(request.getMessage()).setResponseNum(request.getRequestNum()).build());          
+//          try {
+//            Thread.sleep(50);
+//          } catch (Exception e) {}
+          
           // Respond with all previous notes at this location.
           //for (RouteNote prevNote : notes.toArray(new RouteNote[0])) {
           //  responseObserver.onNext(prevNote);
@@ -283,6 +300,9 @@ public class RouteGuideServer {
 
         @Override
         public void onCompleted() {
+          if (timer != null) {
+            timer.cancel();
+          }
           responseObserver.onCompleted();
         }
     }

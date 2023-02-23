@@ -251,7 +251,7 @@ public class RouteGuideClient {
     
           @Override
           public void onNext(ExecuteResponse note) {
-            info("Got message \"{0}\" {1} {2} {3}", note.getResponse(), this.clientNum, note.getClientNum(), note.getResponseNum());
+            //info("Got message \"{0}\" {1} {2} {3}", note.getResponse(), this.clientNum, note.getClientNum(), note.getResponseNum());
             if (testHelper != null) {
               testHelper.onMessage(note);
             }
@@ -268,22 +268,23 @@ public class RouteGuideClient {
 
           @Override
           public void onCompleted() {
-            info("Finished Execute");
+            //info("Finished Execute");
             finishLatch.countDown();
           }
   };
 
      
   public CountDownLatch execute(int clientNum) {
-    info("*** Execute");
+    //info("*** Execute");
     final CountDownLatch finishLatch = new CountDownLatch(1);
     StreamObserver<ExecuteRequest> requestObserver =
       asyncStub.execute(new ExecuteStreamObserver(finishLatch, clientNum));
 
     try {
-      for (int req = 0; req < 100; req += 1) {
-        ExecuteRequest request = newRequest("hello", clientNum, req);
-        info("Sending message \"{0}\" {1} {2}", request.getMessage(), request.getClientNum(), request.getRequestNum());
+      final String statement = "x".repeat(20000);
+      for (int req = 0; req < 1000; req += 1) {
+        ExecuteRequest request = newRequest(statement, clientNum, req);
+//        info("Sending message \"{0}\" {1} {2}", request.getMessage(), request.getClientNum(), request.getRequestNum());
         requestObserver.onNext(request);
       }
     } catch (RuntimeException e) {
@@ -345,7 +346,7 @@ public class RouteGuideClient {
 
       List<CountDownLatch> latches = new ArrayList<CountDownLatch>();
 
-      for (int i = 0; i < 2; i += 1) {
+      for (int i = 0; i < 32; i += 1) {
         RouteGuideClient client = new RouteGuideClient(channel);
 
         CountDownLatch finishLatch = client.execute(i);
